@@ -1,0 +1,7 @@
+---
+# Playbook used to configure the certificates. 
+# Check the role for more information
+- hosts: all_nodes
+  become: yes
+  roles:
+   - certificates

@@ -1,0 +1,17 @@
+- name: Init sworm mode on the manager.
+  command: "docker swarm init --listen-addr {{ node_ip }}:{{ docker_swarm_port }} --advertise-addr {{ node_ip }}"
+  register: result
+  changed_when: result.rc == 0
+
+- name: Get the worker join-token.
+  command: "docker swarm join-token -q worker"
+  register: docker_worker_token
+  changed_when: docker_worker_token.rc == 0
+
+- name: Copy token to local file
+  become: false
+  copy:
+    content: "{{ docker_worker_token.stdout_lines[0] }}"
+    dest: "./token"
+    mode: 0644
+  delegate_to: localhost

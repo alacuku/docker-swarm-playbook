@@ -1,0 +1,88 @@
+---
+# this role installs and configures docker on a centos machine
+
+- name: Create a new primary partition on second storage disk
+  parted:
+    device: "{{ block_device }}"
+    number: 1
+    state: present
+
+- name: Create an ext4 filesystem on /dev/sdb1
+  filesystem:
+    fstype: ext4
+    dev: "{{ block_device }}1"
+
+- name: Mount up device by path
+  mount:
+    path: "/var/lib/docker"
+    src: "{{ block_device }}1"
+    opts: auto
+    fstype: ext4
+    state: mounted
+
+#make sure no docker packages are installed on the system
+- name: Remove previous versions of docker.
+  yum:
+    name: "{{ docker_cleanup }}"
+    state: absent
+
+#install packages need by docker
+- name: Install packages needed by docker.
+  yum:
+    name: "{{ docker_dependencies }}"
+    state: present
+
+- name: Add Docker GPG key.
+  rpm_key:
+    key: "{{ docker_yum_gpg_key }}"
+    state: present
+
+- name: Add Docker repository.
+  get_url:
+    url: "{{ docker_yum_repo_url }}"
+    dest: '/etc/yum.repos.d/docker-ce.repo'
+    owner: root
+    group: root
+    mode: 0644
+
+# different versions can be installed->modify the docker_packages variable
+- name: Install Docker packages.
+  yum:
+    name: "{{ docker_packages }}"
+    state: present
+
+- name: Add vagrant user to docker group
+  user:
+    name: "{{ user }}" # defined in group_var/all
+    group: docker
+
+- name: Remove the socket listening from the systemd docker service file
+  lineinfile:
+    path: /usr/lib/systemd/system/docker.service
+    regexp: '^ExecStart=/usr/bin/dockerd'
+    line: "ExecStart=/usr/bin/dockerd"
+
+- name: Ensure Docker is started and enabled at boot.
+  service:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Template the inventory.ini.j2 configuration file to invetory.ini
+  template:
+    src: daemon.json.j2
+    dest: /etc/docker/daemon.json
+    mode: 0644
+
+- name: Restart Docker
+  service:
+    name: docker
+    state: restarted
+
+- name: Enable the kernel to pass bridged IPv4 traffic to iptables' chains and the forwarding
+  command: "{{ item }}"
+  register: result
+  changed_when: result.rc == 0
+  with_items:
+    - sysctl -w net.bridge.bridge-nf-call-iptables=1
+    - sysctl -w net.ipv4.ip_forward=1

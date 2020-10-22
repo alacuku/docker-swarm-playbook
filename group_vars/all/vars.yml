@@ -1,0 +1,130 @@
+#These variables are shared among all roles
+docker_yum_repo_url: https://download.docker.com/linux/centos/docker-ce.repo
+docker_yum_gpg_key: https://download.docker.com/linux/centos/gpg
+
+
+docker_cleanup:
+- docker 
+- docker-client 
+- docker-client-latest 
+- docker-common 
+- docker-latest 
+- docker-latest-logrotate 
+- docker-logrotate 
+- docker-engine
+
+docker_dependencies:
+- yum-utils
+- device-mapper-persistent-data
+- lvm2
+
+
+docker_packages:
+- docker-ce-19.03.9-3.el7
+- docker-ce-cli-19.03.9-3.el7
+- containerd.io
+
+#path to the block device used to configure the storage driver
+block_device: "/dev/sdb"
+
+#user to be added to the k8s group
+user: vagrant
+
+# zone to which set the time
+time_zone: Europe/Rome
+
+
+############################
+#Certificates Configuration#
+############################
+
+#Path to temporary file space. Defaults to '/tmp'.
+dds_system_tmp: "/tmp"
+
+# Two character country abbreviation. Used in the server CSR. Defaults to 'US'.
+dds_country: "IT"
+
+#State or provence name. Used in the server CSR.
+dds_state: "Italy"
+
+#City name. Used in the server CSR.
+dds_locality: "Turin"
+
+# Organization or company name.
+dds_organization: "Acme Corp"
+
+#The host name or IP address used to access the Docker daemon.
+dds_host: "192.168.1.13"
+
+#A password used to secure key files.
+dds_passphrase: "Phrase123!"
+
+#Path where server certificates will be created.
+dds_server_cert_path: "/etc/docker"
+
+#Path where client certificates will be created.
+dds_client_cert_path: "~/.docker"
+
+dds_temp_path: "{{ dds_system_tmp }}/ansible_dds"
+dds_passphrase_file: "{{ dds_temp_path }}/passphrase.txt"
+dds_csr_form_file: "{{ dds_temp_path }}/csr_form.txt"
+dds_extfile: "{{ dds_temp_path }}/extfile.cnf"
+
+
+#####################
+#Nodes Configuration#
+#####################
+
+#Node configuration. The cluster can have only one manager node and many worker nodes as needed. Please change those values as needed.
+docker_nodes_ips:
+- 192.168.1.100
+- 192.168.1.101
+
+#only one manager per swarm
+swarm_manager_node_ip:
+- 192.168.1.100
+
+swarm_worker_nodes_ip:
+- 192.168.1.101
+
+#Netmask used for the network to which the node ips belong to
+netmask: 255.255.255.0
+
+#theese prefixes are used when generating the names of the nodes. Used in the host_vars files, inventory.ini and in /etc/hosts in the local system.
+docker_node_prefix: docker-node-
+
+manager_node_prefix: docker-manager-
+
+worker_node_prefix: docker-worker-
+
+docker_swarm_port: 2377
+
+
+############################
+#Vagrant file configuration#
+############################
+
+#flavor of the operating system to be used in the VMs
+image_name: "centos/7"
+#the nic on your host to which the VM interface will be bridged.
+bridge_nic:  eno1
+
+#Path to the generated SSH private key file
+ssh_key_path: ~/.ssh
+ssh_key_name: vagrant_machines
+
+#Path to the private key
+prv_key_path: "{{ssh_key_path}}/{{ssh_key_name}}"
+
+#path to the public key used to ssh to the machines, if this key does not exist than a new one is generated with the same name
+pub_key_path: "{{ssh_key_path}}/{{ssh_key_name}}.pub"
+
+#Amount of RAM memory for a single VM
+virtual_memory_size: 4096
+
+#Amount of Virtual CPUs for a single VM
+virtual_cpus: 2
+
+#Amount of storage for Docker in GB
+docker_storage: 50
+

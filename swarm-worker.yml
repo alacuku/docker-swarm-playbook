@@ -1,0 +1,4 @@
+- hosts: swarm_worker_nodes
+  become: yes
+  roles:
+   - worker
