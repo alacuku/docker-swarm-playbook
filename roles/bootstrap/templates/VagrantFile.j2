@@ -1,0 +1,38 @@
+IMAGE_NAME = "{{ image_name }}"
+BRIDGE_NIC = "{{ bridge_nic }}"
+VAGRANT_EXPERIMENTAL="disks"
+vboxmanage_path = "VBoxManage" # Assume it's in the path on Linux
+Vagrant.configure("2") do |config|
+    config.ssh.insert_key = true
+    
+   
+{% for node_ip in docker_nodes_ips %}
+    config.vm.define "{{ docker_node_prefix }}{{ loop.index }}" do |master|
+        master.vm.box = IMAGE_NAME
+        master.vm.provider "virtualbox" do |v{{ loop.index }}|
+            v{{ loop.index }}.memory = {{ virtual_memory_size }}
+            v{{ loop.index }}.cpus = {{ virtual_cpus }}
+            v{{ loop.index }}.name = "{{ docker_node_prefix }}{{ loop.index }}"
+            # Get disk path
+            line = `"#{vboxmanage_path}" list systemproperties`.split(/\n/).grep(/Default machine folder/).first
+            vb_machine_folder = line.split(':', 2)[1].strip()
+            second_disk = File.join(vb_machine_folder, v{{ loop.index }}.name, 'docker-storage.vdi')
+
+            # Create and attach disk
+            unless File.exist?(second_disk)
+              v{{ loop.index }}.customize ['createhd', '--filename', second_disk, '--format', 'VDI', '--size', {{ docker_storage }} * 1024]
+            end
+            v{{ loop.index }}.customize ['storageattach', :id, '--storagectl', 'IDE', '--port', 0, '--device', 1, '--type', 'hdd', '--medium', second_disk]
+        end
+        master.vm.network "public_network", bridge: BRIDGE_NIC, ip: "{{ node_ip }}", netmask: "{{ netmask }}"
+        master.vm.hostname = "docker-node"
+        master.vm.provision "ansible" do |ansible|
+            # Configures the ssh-key
+            ansible.playbook = "vagrant-ssh-key.yml"
+             ansible.extra_vars = {
+                pub_key_path: "{{ pub_key_path }}"
+            }
+        end
+    end
+{% endfor %}
+end

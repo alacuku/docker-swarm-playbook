@@ -1,0 +1,6 @@
+# Playbook used to configure the certificates. 
+# Check the role for more information
+- hosts: swarm_manager_node
+  become: yes
+  roles:
+   - manager

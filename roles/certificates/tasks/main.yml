@@ -1,0 +1,43 @@
+---
+
+- name: Create a tempdir
+  file:
+    state: directory
+    path: "{{ dds_temp_path }}"
+    mode: 0644
+
+- name: Remove passphrase file, if it exists
+  file:
+    state: absent
+    path: "{{ dds_passphrase_file }}"
+    mode: 0644
+
+- name: Create passphrase file
+  file:
+    state: touch
+    path: "{{ dds_passphrase_file }}"
+    mode: 0644
+
+- name: Add passphrase to the file
+  lineinfile:
+    dest: "{{ dds_passphrase_file }}"
+    line: "{{ dds_passphrase }}"
+  changed_when: true
+
+- name: Generate ca-key.pem
+  command: "openssl genrsa -aes256 -passout file:{{ dds_passphrase_file }} -out {{ dds_temp_path }}/ca-key.pem 4096"
+  register: result
+  changed_when: result.rc == 0
+
+- name: Generate ca certificate
+  command: "openssl req -new -x509 -days 365 -key {{ dds_temp_path }}/ca-key.pem -sha256 -out {{ dds_temp_path }}/ca.pem -passin file:{{ dds_passphrase_file }} -subj '/C={{ dds_country }}/ST={{ dds_state }}>/L={{ dds_locality }}/O={{ dds_organization }}/CN=test'"
+  register: result
+  changed_when: result.rc == 0
+
+- include: generate_server_certs.yml
+- include: generate_client_certs.yml
+
+- name: Remove the temp directory
+  file:
+    state: absent
+    path: "{{ dds_temp_path }}"

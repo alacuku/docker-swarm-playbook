@@ -1,0 +1,4 @@
+- name: Join the pending Swarm worker nodes.
+  command: "docker swarm join --token {{ lookup('file', 'token') }} {{ swarm_manager_node_ip[0] }}:{{ docker_swarm_port }}"
+  register: result
+  changed_when: result.rc == 0
