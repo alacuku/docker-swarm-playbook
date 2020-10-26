@@ -20,7 +20,7 @@ The first playbook to be executed is *bootstrap.yml* which does the following:
 * Reads the variables in *docker-swarm-playbook/group_vars/all/vars.yml*
 * Generates the **Vagrantfile** from the *docker-swarm-playbook/roles/bootstrap/templates/VagrantFile.j2*
 * Generates the **docker-swarm-playbook/inventory.ini** from the *docker-swarm-playbook/roles/bootstrap/templates/inventory.ini.j2*
-* For each IP in **k8s_worker_nodes_ips** generates a new file in *docker-swarm-playbook/host_vars* using the **k8s_worker_node_prefix** and populates it with an ip taken from the list.
+* For each IP in **docker_nodes_ips** generates a new file in *docker-swarm-playbook/host_vars* using the **docker_node_prefix** and populates it with an ip taken from the list.
 * For each node to be part of the docker-swarm it adds the hostname and IP address associated to that host in */etc/hosts* in the localhost filesystem.
 * At the end it runs the vagrant program to provision the VMs.
 
